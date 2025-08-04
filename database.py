@@ -42,7 +42,7 @@ def new_user(user_id,nick,age) -> None | int:
 
 def return_from(return_type)-> list[dict[str, Any]]:
 	cursor.execute(f"SELECT * FROM {return_type}")
-	return [dict(zip(('id','nick','age'),i )) for i in cursor.fetchall()]
+	return [dict(zip(('id','nick','age'),member )) for member in cursor.fetchall()]
 
 def make_admin(user_id) -> None:
 	cursor.execute("SELECT id,nick,age FROM Members WHERE id=?",(user_id,))

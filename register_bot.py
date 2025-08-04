@@ -41,7 +41,8 @@ def protected(func):
             await callback.answer()
             return None
         else:
-            return await func()
+            await callback.answer()
+            return await func(callback)
     return wrapper
 
 @dp.message(CommandStart())
@@ -219,7 +220,7 @@ async def manage_admins(callback: CallbackQuery) -> None:
 async def add_admin_menu(callback: CallbackQuery) -> None:
     buttons = []
     for member in return_from('Members'):
-        if member not in return_from('Admins'):
+        if not is_admin(member['id']):
             buttons.append([InlineKeyboardButton(text=f"👤 {member['nick']}", callback_data=f'admin{member['id']}')])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await callback.message.answer("👑 Кому выдать права админа?", reply_markup=keyboard)
