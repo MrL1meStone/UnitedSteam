@@ -114,8 +114,8 @@ async def make_request(message: Message, state: FSMContext):
 async def show_members(callback: CallbackQuery) -> None:
     await callback.answer()
     buttons = []
-    for i in return_from('Members'):
-        buttons.append([InlineKeyboardButton(text=f"👤 {i[1]}", url=f'tg://user/?id={i[0]}')])
+    for member in return_from('Members'):
+        buttons.append([InlineKeyboardButton(text=f"👤 {member['nick']}", url=f'tg://user/?id={member['id']}')])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await callback.message.answer("📋 Вот список игроков клана:", reply_markup=keyboard)
 
@@ -126,12 +126,12 @@ async def show_requests(callback: CallbackQuery) -> None:
         await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
         return
     buttons = []
-    for i in return_from('Requests'):
+    for request in return_from('Requests'):
         buttons.append([
-            InlineKeyboardButton(text=f'👤 {i[1]}, {i[2]}', url=f'tg://user/?id={i[0]}')])
+            InlineKeyboardButton(text=f'👤 {request['nick']}, {request['age']}', url=f'tg://user/?id={request['id']}')])
         buttons.append([
-            InlineKeyboardButton(text="✅ Принять", callback_data=f"Принять{i[0]}"),
-            InlineKeyboardButton(text="❌ Отклонить", callback_data=f"Отклонить{i[0]}")
+            InlineKeyboardButton(text="✅ Принять", callback_data=f"Принять{request['id']}"),
+            InlineKeyboardButton(text="❌ Отклонить", callback_data=f"Отклонить{request['id']}")
         ])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     if buttons:
@@ -175,9 +175,17 @@ async def manage_members(callback: CallbackQuery) -> None:
         await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
         return
 
+    keyboard=InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=f"🚪 Выгнать", callback_data='show_members_to_fire')],
+        [InlineKeyboardButton(text=f"⛔ Забанить", callback_data='show_members_to_ban')]])
+
+    await callback.message.answer("Что сделать?", reply_markup=keyboard)
+
+@dp.callback_query(F.data == "show_members_to_fire")
+async def fire_member(callback: CallbackQuery) -> None:
     buttons = []
-    for i in return_from('Members'):
-        buttons.append([InlineKeyboardButton(text=f"🚪 Выгнать {i[1]}", callback_data=f'fire{i[0]}')])
+    for member in return_from('Members'):
+        buttons.append([InlineKeyboardButton(text=f"🚪 Выгнать {member['nick']}", callback_data=f'fire{member['id']}')])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await callback.message.answer("❓ Кого выгнать из клана?", reply_markup=keyboard)
 

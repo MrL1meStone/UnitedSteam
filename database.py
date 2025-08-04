@@ -1,4 +1,6 @@
 import sqlite3
+from typing import Any
+
 connection = sqlite3.connect('users.db')
 cursor = connection.cursor()
 cursor.execute('''
@@ -38,9 +40,9 @@ def new_user(user_id,nick,age) -> None | int:
 	cursor.execute('INSERT INTO Requests (id,nick,age) VALUES (?, ?, ?)', (user_id, nick, age))
 	connection.commit()
 
-def return_from(return_type)-> list:
+def return_from(return_type)-> dict[str, Any]:
 	cursor.execute(f"SELECT * FROM {return_type}")
-	return cursor.fetchall()
+	return dict(zip(('id','nick','age'),cursor.fetchall()))
 
 def make_admin(user_id) -> None:
 	cursor.execute("SELECT id,nick,age FROM Members WHERE id=?",(user_id,))
