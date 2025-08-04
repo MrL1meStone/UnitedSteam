@@ -66,7 +66,7 @@ def is_member(user_id) -> bool:
 	return bool(cursor.fetchone())
 
 def remove_member(user_id) -> None:
-	cursor.execute('DELETE FROM Users WHERE id = ?', (user_id,))
+	cursor.execute('DELETE FROM Members WHERE id = ?', (user_id,))
 	cursor.execute('DELETE FROM Admins WHERE id = ?', (user_id,))
 	cursor.execute('DELETE FROM Requests WHERE id = ?', (user_id,))
 	connection.commit()
