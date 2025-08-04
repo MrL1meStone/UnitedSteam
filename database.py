@@ -29,9 +29,7 @@ age INTEGER
 
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS Bans (
-id INTEGER PRIMARY KEY,
-nick TEXT NOT NULL,
-age INTEGER
+id INTEGER PRIMARY KEY
 )
 ''')
 
@@ -78,12 +76,10 @@ def remove_admin(user_id) -> None:
 def ban(user_id) -> None:
 	if not is_member(user_id):
 		cursor.execute(f"SELECT nick,age FROM Requests WHERE id=?", (user_id,))
-		nick,age=cursor.fetchone()
 	else:
 		cursor.execute(f"SELECT nick,age FROM Members WHERE id=?", (user_id,))
-		nick, age = cursor.fetchone()
 
-	cursor.execute('INSERT INTO Bans (id,nick,age) VALUES (?, ?, ?)', (user_id, nick, age))
+	cursor.execute('INSERT INTO Bans id VALUES ?', (user_id,))
 	remove_member(user_id)
 	connection.commit()
 
