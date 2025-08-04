@@ -183,7 +183,7 @@ async def manage_members(callback: CallbackQuery) -> None:
         [InlineKeyboardButton(text=f"🚪 Выгнать", callback_data='show_members_to_fire')],
         [InlineKeyboardButton(text=f"⛔ Забанить", callback_data='show_members_to_ban')],
         [InlineKeyboardButton(text=f"✅ Разбанить", callback_data='show_members_to_unban')],
-        [InlineKeyboardButton(text=f"📋 Список забаненых", callback_data='show_banned')],
+        [InlineKeyboardButton(text=f"📋 Список забаненых", callback_data='show_bans')],
         [InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")]])
     await change_message('Что сделать?', callback, keyboard)
 
@@ -199,29 +199,52 @@ async def fire_member(callback: CallbackQuery) -> None:
 
 @dp.callback_query(F.data == "show_members_to_ban")
 @protected
-async def ban_member(callback: CallbackQuery) -> None:
+async def show_members_to_ban(callback: CallbackQuery) -> None:
     buttons = []
     for member in return_from('Members'):
         buttons.append([InlineKeyboardButton(text=f"⛔ Забанить {member['nick']}", callback_data=f'ban{member["id"]}')])
     buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    await bot.edit_message_text(text='❓ Кого забанить?', message_id=callback.message.message_id,
-                                chat_id=callback.message.chat.id)
-    await bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
-                                        reply_markup=keyboard)
+    await change_message('❓ Кого забанить?', callback, keyboard)
+
+@dp.callback_query(F.data.startswith("ban"))
+@protected
+async def ban_member(callback: CallbackQuery) -> None:
+    user_id = callback.data[4:]
+    remove_member(user_id)
+    await bot.send_message(chat_id=user_id, text="😢 К сожалению, вас добавили в ЧС клана")
+    await callback.answer("👋 Игрок был забанен",show_alert=True)
 
 @dp.callback_query(F.data == "show_members_to_unban")
 @protected
-async def ban_member(callback: CallbackQuery) -> None:
+async def show_members_to_unban(callback: CallbackQuery) -> None:
     buttons = []
     for member in return_from('Bans'):
         buttons.append([InlineKeyboardButton(text=f"✅ Разбанить {member['nick']}", callback_data=f'unban{member["id"]}')])
     buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    await bot.edit_message_text(text='❓ Кого разбанить?', message_id=callback.message.message_id,
-                                chat_id=callback.message.chat.id)
-    await bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
-                                        reply_markup=keyboard)
+    await change_message('❓ Кого разбанить?', callback, keyboard)
+
+@dp.callback_query(F.data.startswith("unban"))
+@protected
+async def fire_member(callback: CallbackQuery) -> None:
+    user_id = callback.data[4:]
+    remove_member(user_id)
+    await bot.send_message(chat_id=user_id, text="✅ Вас убрали из ЧС клана")
+    await callback.answer("✅ Игрок был разбанен",show_alert=True)
+
+@dp.callback_query(F.data == "show_bans")
+@protected
+async def show_bans(callback: CallbackQuery) -> None:
+    buttons = []
+    n=0
+    for member in return_from('Bans'):
+        n+=1
+        buttons.append([InlineKeyboardButton(text=n,url=f'tg://user/?id={member["id"]}')])
+    buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")])
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    text='⛔ Забаненные игроки: ' if return_from('Bans') else '❌ Забаненых нет, ура!'
+    await change_message(text, callback, keyboard)
 
 
 @dp.callback_query(F.data.startswith("fire"))
@@ -240,10 +263,7 @@ async def manage_admins(callback: CallbackQuery) -> None:
         [InlineKeyboardButton(text="➖ Снять с себя права админа", callback_data="remove_admin")],
         [InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")]]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    await bot.edit_message_text(text='👑 Управление админами:', message_id=callback.message.message_id,
-                                chat_id=callback.message.chat.id)
-    await bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
-                                        reply_markup=keyboard)
+    await change_message('👑 Управление админами:', callback, keyboard)
 
 @dp.callback_query(F.data == "add_admin")
 @protected
@@ -254,10 +274,7 @@ async def add_admin_menu(callback: CallbackQuery) -> None:
             buttons.append([InlineKeyboardButton(text=f"👤 {member['nick']}", callback_data=f'admin{member["id"]}')])
     buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    await bot.edit_message_text(text='👑 Кому выдать права админа?', message_id=callback.message.message_id,
-                                chat_id=callback.message.chat.id)
-    await bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=callback.message.message_id,
-                                        reply_markup=keyboard)
+    await change_message('👑 Кому выдать права админа?', callback, keyboard)
 
 @dp.callback_query(F.data.startswith("admin"))
 @protected
