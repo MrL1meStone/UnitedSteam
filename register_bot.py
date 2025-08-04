@@ -285,6 +285,7 @@ async def op_member(callback: CallbackQuery) -> None:
     make_admin(user_id)
     await bot.send_message(chat_id=user_id, text="🎩 Поздравляем! Вас повысили до админа!")
     await callback.answer("✅ Вы повысили игрока до админа",show_alert=True)
+    await add_admin_menu(callback)
 
 @dp.callback_query(F.data == "remove_admin")
 @protected
