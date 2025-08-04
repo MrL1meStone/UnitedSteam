@@ -43,9 +43,9 @@ def return_from(return_type)-> list:
 	return cursor.fetchall()
 
 def make_admin(user_id) -> None:
-	cursor.execute(f"SELECT id,nick,age FROM Members WHERE id=?",(user_id,))
+	cursor.execute("SELECT id,nick,age FROM Members WHERE id=?",(user_id,))
 	user_id,nick,age=cursor.fetchone()
-	cursor.execute('INSERT INTO Admins id,nick,age VALUES (?, ?, ?)', (user_id,nick,age))
+	cursor.execute('INSERT INTO Admins (id,nick,age) VALUES (?, ?, ?)', (user_id,nick,age))
 	connection.commit()
 
 def is_admin(user_id) -> bool:
@@ -53,9 +53,9 @@ def is_admin(user_id) -> bool:
 	return bool(cursor.fetchone())
 
 def make_member(user_id) -> None:
-	cursor.execute(f"SELECT id,nick,age FROM Requests WHERE id=?", (user_id,))
+	cursor.execute("SELECT id,nick,age FROM Requests WHERE id=?", (user_id,))
 	user_id, nick, age = cursor.fetchone()
-	cursor.execute('INSERT INTO Members id,nick,age VALUES (?, ?, ?)', (user_id, nick, age))
+	cursor.execute('INSERT INTO Members (id,nick,age) VALUES (?, ?, ?)', (user_id, nick, age))
 	cursor.execute('DELETE FROM Requests WHERE id = ?', (user_id,))
 	connection.commit()
 
@@ -81,7 +81,7 @@ def ban(user_id) -> None:
 		cursor.execute(f"SELECT nick,age FROM Members WHERE id=?", (user_id,))
 		nick, age = cursor.fetchone()
 
-	cursor.execute('INSERT INTO Bans id,nick,age VALUES (?, ?, ?)', (user_id, nick, age))
+	cursor.execute('INSERT INTO Bans (id,nick,age) VALUES (?, ?, ?)', (user_id, nick, age))
 	remove_member(user_id)
 	connection.commit()
 
