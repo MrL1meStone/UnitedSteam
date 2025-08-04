@@ -183,11 +183,29 @@ async def manage_members(callback: CallbackQuery) -> None:
 
 @dp.callback_query(F.data == "show_members_to_fire")
 async def fire_member(callback: CallbackQuery) -> None:
+    await callback.answer()
+    if not is_admin(callback.from_user.id):
+        await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
+        return
+
     buttons = []
     for member in return_from('Members'):
         buttons.append([InlineKeyboardButton(text=f"🚪 Выгнать {member['nick']}", callback_data=f'fire{member['id']}')])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await callback.message.answer("❓ Кого выгнать из клана?", reply_markup=keyboard)
+
+@dp.callback_query(F.data == "show_members_to_ban")
+async def fire_member(callback: CallbackQuery) -> None:
+    await callback.answer()
+    if not is_admin(callback.from_user.id):
+        await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
+        return
+
+    buttons = []
+    for member in return_from('Members'):
+        buttons.append([InlineKeyboardButton(text=f"⛔ Забанить {member['nick']}", callback_data=f'fire{member['id']}')])
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    await callback.message.answer("❓ Кого забанить?", reply_markup=keyboard)
 
 @dp.callback_query(F.data.startswith("fire"))
 async def fire_member(callback: CallbackQuery) -> None:
