@@ -34,6 +34,16 @@ def get_main_menu():
         [InlineKeyboardButton(text="🚪 Выйти", callback_data="leave")]
     ])
 
+def protected(func):
+    async def wrapper(callback: CallbackQuery):
+        if not is_admin(callback.from_user.id):
+            await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
+            await callback.answer()
+            return None
+        else:
+            return await func()
+    return wrapper
+
 @dp.message(CommandStart())
 @dp.message(Command("menu"))
 async def command_start_handler(message: Message, state: FSMContext) -> None:
@@ -120,11 +130,9 @@ async def show_members(callback: CallbackQuery) -> None:
     await callback.message.answer("📋 Вот список игроков клана:", reply_markup=keyboard)
 
 @dp.callback_query(F.data == "requests")
+@protected
 async def show_requests(callback: CallbackQuery) -> None:
     await callback.answer()
-    if not is_admin(callback.from_user.id):
-        await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
-        return
     buttons = []
     for request in return_from('Requests'):
         buttons.append([
@@ -140,11 +148,9 @@ async def show_requests(callback: CallbackQuery) -> None:
         await callback.message.answer("❌ Заявок нет")
 
 @dp.callback_query(F.data.startswith('Принять'))
+@protected
 async def accept_request(callback: CallbackQuery) -> None:
     await callback.answer()
-    if not is_admin(callback.from_user.id):
-        await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
-        return
     user_id = callback.data[7:]
     make_member(user_id)
     await bot.send_message(
@@ -158,36 +164,24 @@ async def accept_request(callback: CallbackQuery) -> None:
     await callback.message.answer("✅ Заявка была принята")
 
 @dp.callback_query(F.data.startswith('Отклонить'))
+@protected
 async def decline_request(callback: CallbackQuery) -> None:
-    await callback.answer()
-    if not is_admin(callback.from_user.id):
-        await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
-        return
     user_id = callback.data[9:]
     remove_member(user_id)
     await bot.send_message(chat_id=user_id, text="😕 К сожалению, твоя заявка была отклонена")
     await callback.message.answer("❌ Заявка была отклонена")
 
 @dp.callback_query(F.data == "manage_members")
+@protected
 async def manage_members(callback: CallbackQuery) -> None:
-    await callback.answer()
-    if not is_admin(callback.from_user.id):
-        await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
-        return
-
     keyboard=InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=f"🚪 Выгнать", callback_data='show_members_to_fire')],
         [InlineKeyboardButton(text=f"⛔ Забанить", callback_data='show_members_to_ban')]])
-
     await callback.message.answer("Что сделать?", reply_markup=keyboard)
 
 @dp.callback_query(F.data == "show_members_to_fire")
+@protected
 async def fire_member(callback: CallbackQuery) -> None:
-    await callback.answer()
-    if not is_admin(callback.from_user.id):
-        await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
-        return
-
     buttons = []
     for member in return_from('Members'):
         buttons.append([InlineKeyboardButton(text=f"🚪 Выгнать {member['nick']}", callback_data=f'fire{member['id']}')])
@@ -195,12 +189,8 @@ async def fire_member(callback: CallbackQuery) -> None:
     await callback.message.answer("❓ Кого выгнать из клана?", reply_markup=keyboard)
 
 @dp.callback_query(F.data == "show_members_to_ban")
+@protected
 async def fire_member(callback: CallbackQuery) -> None:
-    await callback.answer()
-    if not is_admin(callback.from_user.id):
-        await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
-        return
-
     buttons = []
     for member in return_from('Members'):
         buttons.append([InlineKeyboardButton(text=f"⛔ Забанить {member['nick']}", callback_data=f'fire{member['id']}')])
@@ -208,36 +198,25 @@ async def fire_member(callback: CallbackQuery) -> None:
     await callback.message.answer("❓ Кого забанить?", reply_markup=keyboard)
 
 @dp.callback_query(F.data.startswith("fire"))
+@protected
 async def fire_member(callback: CallbackQuery) -> None:
-    await callback.answer()
-    if not is_admin(callback.from_user.id):
-        await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
-        return
     user_id = callback.data[4:]
     remove_member(user_id)
     await bot.send_message(chat_id=user_id, text="😢 К сожалению, вас выгнали из клана")
     await callback.message.answer("👋 Игрок был выгнан")
 
 @dp.callback_query(F.data == "manage_admins")
+@protected
 async def manage_admins(callback: CallbackQuery) -> None:
-    await callback.answer()
-    if not is_admin(callback.from_user.id):
-        await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
-        return
     buttons = [
         [InlineKeyboardButton(text="➕ Назначить админа", callback_data="add_admin")],
-        [InlineKeyboardButton(text="➖ Снять с себя права админа", callback_data="remove_admin")]
-    ]
+        [InlineKeyboardButton(text="➖ Снять с себя права админа", callback_data="remove_admin")]]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await callback.message.answer("👑 Управление админами:", reply_markup=keyboard)
 
 @dp.callback_query(F.data == "add_admin")
+@protected
 async def add_admin_menu(callback: CallbackQuery) -> None:
-    await callback.answer()
-    if not is_admin(callback.from_user.id):
-        await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
-        return
-
     buttons = []
     for member in return_from('Members'):
         if member not in return_from('Admins'):
@@ -246,13 +225,10 @@ async def add_admin_menu(callback: CallbackQuery) -> None:
     await callback.message.answer("👑 Кому выдать права админа?", reply_markup=keyboard)
 
 @dp.callback_query(F.data.startswith("admin"))
+@protected
 async def op_member(callback: CallbackQuery) -> None:
-    await callback.answer()
-    if not is_admin(callback.from_user.id):
-        await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
-        return
     user_id = callback.data[5:]
-    if int(user_id) not in return_from('Admins'):
+    if is_admin(user_id):
         make_admin(user_id)
         await bot.send_message(chat_id=user_id, text="🎩 Поздравляем! Вас повысили до админа!")
         await callback.message.answer("✅ Вы повысили игрока до админа")
@@ -260,11 +236,8 @@ async def op_member(callback: CallbackQuery) -> None:
         await callback.message.answer("⚠️ Этот игрок уже является админом")
 
 @dp.callback_query(F.data == "remove_admin")
+@protected
 async def deop(callback: CallbackQuery) -> None:
-    await callback.answer()
-    if not is_admin(callback.from_user.id):
-        await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
-        return
     remove_admin(callback.from_user.id)
     await callback.message.answer("👋 Вы сняли с себя права админа")
 
