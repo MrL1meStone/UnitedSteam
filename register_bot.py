@@ -49,14 +49,20 @@ async def command_start_handler(message: Message, state: FSMContext) -> None:
 async def register(callback: CallbackQuery, state: FSMContext) -> None:
     data = await state.get_data()
     await callback.answer()
+
     if data['id'] != callback.from_user.id:
         await callback.message.answer(f"⚠️ {callback.from_user.first_name}, ты не тот, кто использовал команду")
         return
+
     if is_member(data["id"]):
         await callback.message.answer(
-            "⚠️ Ты уже подавал заявку! Подожди пока ее одобрят или ее уже одобрили",
-            reply_markup=get_main_menu()
-        )
+            "⚠️ Ты уже подавал заявку! Подожди пока ее одобрят или ее уже одобрили",reply_markup=get_main_menu())
+        return
+
+    if is_banned(data["id"]):
+        await callback.message.answer('⚠️ Извините, вы находитесь в черном списке клана')
+        return
+
     await state.set_state(States.nick)
     await callback.message.answer("✏️ Напиши свой ник в Minecraft:")
 
@@ -66,6 +72,7 @@ async def write_nick(message: Message, state: FSMContext) -> None:
     if data['id'] != message.from_user.id:
         await message.answer(f"⚠️ {message.from_user.first_name}, ты не тот, кто использовал команду")
         return
+
     await state.update_data(nick=message.text)
     await message.answer("✅ Отлично! Теперь введи свой возраст:")
     await state.set_state(States.age)
@@ -91,7 +98,7 @@ async def make_request(message: Message, state: FSMContext):
         "📩 Отлично, заявка отправлена! Когда она будет принята, тебе придет уведомление 🎉",
         reply_markup=get_main_menu())
     buttons=[]
-    for i in return_requests():
+    for i in return_from('Requests'):
         buttons.append([
             InlineKeyboardButton(text=f'👤 {i[1]}, {i[2]}', url=f'tg://user/?id={i[0]}')])
         buttons.append([
@@ -99,7 +106,7 @@ async def make_request(message: Message, state: FSMContext):
             InlineKeyboardButton(text="❌ Отклонить", callback_data=f"Отклонить{i[0]}")
         ])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    for admin in return_admins():
+    for admin in return_from('Admins'):
         await bot.send_message(chat_id=admin,text="📨 Поступила новая заявка, вот список текущих: ",reply_markup=keyboard)
     await state.set_state('none')
 
@@ -107,7 +114,7 @@ async def make_request(message: Message, state: FSMContext):
 async def show_members(callback: CallbackQuery) -> None:
     await callback.answer()
     buttons = []
-    for i in return_members():
+    for i in return_from('Members'):
         buttons.append([InlineKeyboardButton(text=f"👤 {i[1]}", url=f'tg://user/?id={i[0]}')])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await callback.message.answer("📋 Вот список игроков клана:", reply_markup=keyboard)
@@ -119,7 +126,7 @@ async def show_requests(callback: CallbackQuery) -> None:
         await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
         return
     buttons = []
-    for i in return_requests():
+    for i in return_from('Requests'):
         buttons.append([
             InlineKeyboardButton(text=f'👤 {i[1]}, {i[2]}', url=f'tg://user/?id={i[0]}')])
         buttons.append([
@@ -167,8 +174,9 @@ async def manage_members(callback: CallbackQuery) -> None:
     if not is_admin(callback.from_user.id):
         await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
         return
+
     buttons = []
-    for i in return_members():
+    for i in return_from('Members'):
         buttons.append([InlineKeyboardButton(text=f"🚪 Выгнать {i[1]}", callback_data=f'fire{i[0]}')])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await callback.message.answer("❓ Кого выгнать из клана?", reply_markup=keyboard)
@@ -203,9 +211,10 @@ async def add_admin_menu(callback: CallbackQuery) -> None:
     if not is_admin(callback.from_user.id):
         await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
         return
+
     buttons = []
-    for i in return_members():
-        if i[0] not in return_admins():
+    for i in return_from('Members'):
+        if i[0] not in return_from('Admins'):
             buttons.append([InlineKeyboardButton(text=f"👤 {i[1]}", callback_data=f'admin{i[0]}')])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await callback.message.answer("👑 Кому выдать права админа?", reply_markup=keyboard)
@@ -217,7 +226,7 @@ async def op_member(callback: CallbackQuery) -> None:
         await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
         return
     user_id = callback.data[5:]
-    if int(user_id) not in return_admins():
+    if int(user_id) not in return_from('Admins'):
         make_admin(user_id)
         await bot.send_message(chat_id=user_id, text="🎩 Поздравляем! Вас повысили до админа!")
         await callback.message.answer("✅ Вы повысили игрока до админа")

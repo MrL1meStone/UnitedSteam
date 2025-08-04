@@ -69,6 +69,10 @@ def remove_member(user_id) -> None:
 	cursor.execute('DELETE FROM Requests WHERE id = ?', (user_id,))
 	connection.commit()
 
+def remove_admin(user_id) -> None:
+	cursor.execute('DELETE FROM Admins WHERE id = ?', (user_id,))
+	connection.commit()
+
 def ban(user_id) -> None:
 	if not is_member(user_id):
 		cursor.execute(f"SELECT nick,age FROM Requests WHERE id=?", (user_id,))
