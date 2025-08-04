@@ -98,16 +98,16 @@ async def make_request(message: Message, state: FSMContext):
         "📩 Отлично, заявка отправлена! Когда она будет принята, тебе придет уведомление 🎉",
         reply_markup=get_main_menu())
     buttons=[]
-    for i in return_from('Requests'):
+    for member in return_from('Requests'):
         buttons.append([
-            InlineKeyboardButton(text=f'👤 {i[1]}, {i[2]}', url=f'tg://user/?id={i[0]}')])
+            InlineKeyboardButton(text=f'👤 {member['name']}, {member['age']}', url=f'tg://user/?id={member['id']}')])
         buttons.append([
-            InlineKeyboardButton(text="✅ Принять", callback_data=f"Принять{i[0]}"),
-            InlineKeyboardButton(text="❌ Отклонить", callback_data=f"Отклонить{i[0]}")
+            InlineKeyboardButton(text="✅ Принять", callback_data=f"Принять{member['id']}"),
+            InlineKeyboardButton(text="❌ Отклонить", callback_data=f"Отклонить{member['id']}")
         ])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     for admin in return_from('Admins'):
-        await bot.send_message(chat_id=admin,text="📨 Поступила новая заявка, вот список текущих: ",reply_markup=keyboard)
+        await bot.send_message(chat_id=admin['id'],text="📨 Поступила новая заявка, вот список текущих: ",reply_markup=keyboard)
     await state.set_state('none')
 
 @dp.callback_query(F.data == "members")
@@ -239,9 +239,9 @@ async def add_admin_menu(callback: CallbackQuery) -> None:
         return
 
     buttons = []
-    for i in return_from('Members'):
-        if i[0] not in return_from('Admins'):
-            buttons.append([InlineKeyboardButton(text=f"👤 {i[1]}", callback_data=f'admin{i[0]}')])
+    for member in return_from('Members'):
+        if member not in return_from('Admins'):
+            buttons.append([InlineKeyboardButton(text=f"👤 {member['nick']}", callback_data=f'admin{member['id']}')])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await callback.message.answer("👑 Кому выдать права админа?", reply_markup=keyboard)
 
