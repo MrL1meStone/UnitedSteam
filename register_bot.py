@@ -37,8 +37,7 @@ def get_main_menu():
 def protected(func):
     async def wrapper(callback: CallbackQuery):
         if not is_admin(callback.from_user.id):
-            await callback.message.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна')
-            await callback.answer()
+            await callback.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна',show_alert=True)
             return None
         else:
             await callback.answer()
@@ -172,7 +171,7 @@ async def accept_request(callback: CallbackQuery) -> None:
              "[Ссылка на вступление в чат клана тут](https://t.me/+UkFBTi_5J89lNGNi)",
         parse_mode="Markdown"
     )
-    await callback.answer("✅ Заявка была принята")
+    await callback.answer("✅ Заявка была принята",show_alert=True)
     await show_requests()
 
 @dp.callback_query(F.data.startswith('Отклонить'))
@@ -181,7 +180,7 @@ async def decline_request(callback: CallbackQuery) -> None:
     user_id = callback.data[9:]
     remove_member(user_id)
     await bot.send_message(chat_id=user_id, text="😕 К сожалению, твоя заявка была отклонена")
-    await callback.answer("❌ Заявка была отклонена")
+    await callback.answer("❌ Заявка была отклонена",show_alert=True)
     await show_requests()
 
 @dp.callback_query(F.data == "manage_members")
@@ -229,7 +228,7 @@ async def fire_member(callback: CallbackQuery) -> None:
     user_id = callback.data[4:]
     remove_member(user_id)
     await bot.send_message(chat_id=user_id, text="😢 К сожалению, вас выгнали из клана")
-    await callback.answer("👋 Игрок был выгнан")
+    await callback.answer("👋 Игрок был выгнан",show_alert=True)
 
 @dp.callback_query(F.data == "manage_admins")
 @protected
@@ -265,21 +264,20 @@ async def op_member(callback: CallbackQuery) -> None:
     if is_admin(user_id):
         make_admin(user_id)
         await bot.send_message(chat_id=user_id, text="🎩 Поздравляем! Вас повысили до админа!")
-        await callback.answer("✅ Вы повысили игрока до админа")
+        await callback.answer("✅ Вы повысили игрока до админа",show_alert=True)
     else:
-        await callback.answer("⚠️ Этот игрок уже является админом")
+        await callback.answer("⚠️ Этот игрок уже является админом",show_alert=True)
 
 @dp.callback_query(F.data == "remove_admin")
 @protected
 async def deop(callback: CallbackQuery) -> None:
     remove_admin(callback.from_user.id)
-    await callback.answer("👋 Вы сняли с себя права админа")
+    await callback.answer("👋 Вы сняли с себя права админа",show_alert=True)
 
 @dp.callback_query(F.data == "leave")
 async def leave(callback: CallbackQuery) -> None:
-    await callback.answer()
     remove_member(callback.from_user.id)
-    await callback.answer("👋 Вы вышли из клана")
+    await callback.answer("👋 Вы вышли из клана",show_alert=True)
 
 @dp.callback_query(F.data == "go_back")
 async def go_back(callback : CallbackQuery) -> None:
