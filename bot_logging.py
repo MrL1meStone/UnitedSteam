@@ -5,7 +5,7 @@ time=datetime.datetime.now().time()
 
 def write_log(user_id,text,mode='a'):
 	with open(f'logs/{user_id}.log',mode,encoding='utf-8') as log:
-		log.write(f'{time.isoformat('seconds')} | {text}\n')
+		log.write(f'{time.isoformat("seconds")} | {text}\n')
 
 def everyday_logs():
 	if time!=time.min:
