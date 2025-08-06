@@ -2,7 +2,7 @@ import asyncio
 import re
 import os
 
-from bot_logging import write_log, view_logs
+from bot_logging import write_log, view_logs, everyday_logs
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
@@ -18,7 +18,6 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 bot = Bot(BOT_TOKEN)
 dp = Dispatcher()
-
 class States(StatesGroup):
     none = State()
     nick = State()
@@ -30,7 +29,7 @@ def get_main_menu():
         [InlineKeyboardButton(text="📝 Заполнить анкету", callback_data="register")],
         [InlineKeyboardButton(text="👥 Список участников", callback_data="members")],
         [InlineKeyboardButton(text="👑 Aдминские команды", callback_data="commands_for_admins")],
-        [InlineKeyboardButton(text="🚪 Выйти", callback_data="leave")]
+        [InlineKeyboardButton(text="🚪 Выйти", callback_data="leave_menu")]
     ])
 
 def protected(func):
@@ -165,7 +164,7 @@ async def accept_request(callback: CallbackQuery) -> None:
         parse_mode="Markdown"
     )
     await callback.answer("✅ Заявка была принята",show_alert=True)
-    await show_requests()
+    await show_requests(callback)
     nick="Неизвестен"
     for member in return_from('Members'):
         if member['id']==user_id:
@@ -368,6 +367,14 @@ async def deop(callback: CallbackQuery) -> None:
     await callback.answer("👋 Вы сняли с себя права админа",show_alert=True)
     await write_log(callback.from_user.id, "Снятие с себя прав админа")
 
+@dp.callback_query(F.data == "leave_menu")
+async def leave_menu(callback: CallbackQuery) -> None:
+    keyboard=InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🚪 Да, я хочу выйти", callback_data="leave")],
+        [InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")]
+    ])
+    await change_message('Вы уверенны?', callback, keyboard)
+
 @dp.callback_query(F.data == "leave")
 async def leave(callback: CallbackQuery) -> None:
     if is_member(callback.from_user.id):
@@ -381,12 +388,13 @@ async def leave(callback: CallbackQuery) -> None:
 @dp.callback_query(F.data == "go_back")
 async def go_back(callback : CallbackQuery) -> None:
     keyboard=get_main_menu()
-    await bot.edit_message_text(chat_id=callback.message.chat.id,message_id=callback.message.message_id,text="Вот меню:")
-    await bot.edit_message_reply_markup(chat_id=callback.message.chat.id,message_id=callback.message.message_id,reply_markup=keyboard)
+    await change_message('Вот меню:',callback, keyboard)
     await write_log(callback.from_user.id, 'Нажатие кнопки "назад"')
 
 async def main() -> None:
     await dp.start_polling(bot)
+    while True:
+        await everyday_logs()
 
 if __name__ == "__main__":
     asyncio.run(main())

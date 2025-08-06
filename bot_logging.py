@@ -1,4 +1,5 @@
 import datetime
+import asyncio
 
 from database import return_from
 time=datetime.datetime.now().time()
@@ -18,8 +19,4 @@ def view_logs(user_id):
 		return log.read()
 
 for member in return_from('Members'):
-	write_log(member['id'],f"Новый лог для {member['id']} ({member['nick']})",mode='w')
-
-async def everyday():
-	while True:
-		await everyday_logs()
+	asyncio.run(write_log(member['id'],f"Новый лог для {member['id']} ({member['nick']})",mode='w'))
