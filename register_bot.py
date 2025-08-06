@@ -37,7 +37,8 @@ def protected(func):
     async def wrapper(callback: CallbackQuery):
         if not is_admin(callback.from_user.id):
             await callback.answer(f'⛔ Извини {callback.from_user.first_name}, эта команда тебе недоступна',show_alert=True)
-            write_log(callback.from_user.id, f'Попытка нажать на кнопку для админов без прав в функции "{func.__name__}"')
+            await write_log(callback.from_user.id,
+                            f'Попытка нажать на кнопку для админов без прав в функции "{func.__name__}"')
             return None
         else:
             return await func(callback)
@@ -58,7 +59,7 @@ async def command_start_handler(message: Message, state: FSMContext) -> None:
         "Здесь ты можешь подать заявку на вступление и управлять кланом!",
         reply_markup=get_main_menu(),parse_mode="Markdown"
     )
-    write_log(message.from_user.id,"Старт или команда меню")
+    await write_log(message.from_user.id, "Старт или команда меню")
 
 @dp.callback_query(F.data == "register")
 async def register(callback: CallbackQuery, state: FSMContext) -> None:
@@ -104,7 +105,7 @@ async def make_request(message: Message, state: FSMContext):
     await message.answer(
         "📩 Отлично, заявка отправлена! Когда она будет принята, тебе придет уведомление 🎉",
         reply_markup=get_main_menu())
-    write_log(message.from_user.id,"Успешная отправка заявки")
+    await write_log(message.from_user.id, "Успешная отправка заявки")
     buttons=[]
     for member in return_from('Requests'):
         buttons.append([
@@ -128,7 +129,7 @@ async def show_members(callback: CallbackQuery) -> None:
     buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await change_message('📋 Вот список игроков клана:',callback, keyboard)
-    write_log(callback.from_user.id,'Использован список участников')
+    await write_log(callback.from_user.id, 'Использован список участников')
 
 @dp.callback_query(F.data == "requests")
 @protected
@@ -148,7 +149,7 @@ async def show_requests(callback: CallbackQuery) -> None:
         await change_message('📨 Вот список заявок на вступление:', callback, keyboard)
     else:
         await callback.answer('❌ Заявок нет',show_alert=True)
-    write_log(callback.from_user.id, "Использование списка заявок")
+    await write_log(callback.from_user.id, "Использование списка заявок")
 
 @dp.callback_query(F.data.startswith('Принять'))
 @protected
@@ -169,7 +170,7 @@ async def accept_request(callback: CallbackQuery) -> None:
     for member in return_from('Members'):
         if member['id']==user_id:
             nick = member['nick']
-    write_log(callback.from_user.id,f"Принятие заявки игрока {nick} ({user_id})")
+    await write_log(callback.from_user.id,f"Принятие заявки игрока {nick} ({user_id})")
 
 @dp.callback_query(F.data.startswith('Отклонить'))
 @protected
@@ -183,7 +184,7 @@ async def decline_request(callback: CallbackQuery) -> None:
     await bot.send_message(chat_id=user_id, text="😕 К сожалению, твоя заявка была отклонена")
     await callback.answer("❌ Заявка была отклонена",show_alert=True)
     await show_requests()
-    write_log(callback.from_user.id,f"Принятие заявки игрока {nick} ({user_id})")
+    await write_log(callback.from_user.id,f"Принятие заявки игрока {nick} ({user_id})")
 
 @dp.callback_query(F.data == "commands_for_admins")
 @protected
@@ -195,7 +196,7 @@ async def commands_for_admins(callback : CallbackQuery) -> None:
     [InlineKeyboardButton(text="📋 Логи", callback_data="menu_logs")],
     [InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")]])
     await change_message('Админские команды:', callback, keyboard)
-    write_log(callback.from_user.id, 'Использование панели админских команд')
+    await write_log(callback.from_user.id, 'Использование панели админских команд')
 
 @dp.callback_query(F.data == "menu_logs")
 @protected
@@ -207,7 +208,7 @@ async def menu_logs(callback : CallbackQuery) -> None:
     buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await change_message('Выбери учасника, чьи логи хочешь посмотреть:', callback, keyboard)
-    write_log(callback.from_user.id, 'Использование панели логов')
+    await write_log(callback.from_user.id, 'Использование панели логов')
 
 @dp.callback_query(F.data.startswith("view"))
 @protected
@@ -218,7 +219,7 @@ async def menu_logs(callback : CallbackQuery) -> None:
     for member in return_from('Members'):
         if member['id']==user_id: nick = member['nick']
     keyboard=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")]])
-    write_log(callback.from_user.id, f'Просмотр логов {nick} ({user_id})')
+    await write_log(callback.from_user.id, f'Просмотр логов {nick} ({user_id})')
     await change_message(view_logs(user_id), callback, keyboard)
 
 @dp.callback_query(F.data == "manage_members")
@@ -231,7 +232,7 @@ async def manage_members(callback: CallbackQuery) -> None:
         [InlineKeyboardButton(text=f"📋 Список забаненых", callback_data='show_bans')],
         [InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")]])
     await change_message('Что сделать?', callback, keyboard)
-    write_log(callback.from_user.id,"Использование меню управления игроками")
+    await write_log(callback.from_user.id,"Использование меню управления игроками")
 
 @dp.callback_query(F.data == "show_members_to_fire")
 @protected
@@ -242,7 +243,7 @@ async def fire_member(callback: CallbackQuery) -> None:
     buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await change_message('❓ Кого выгнать из клана?', callback, keyboard)
-    write_log(callback.from_user.id, "Использование меню кика игроков")
+    await write_log(callback.from_user.id, "Использование меню кика игроков")
 
 @dp.callback_query(F.data == "show_members_to_ban")
 @protected
@@ -253,7 +254,7 @@ async def show_members_to_ban(callback: CallbackQuery) -> None:
     buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await change_message('❓ Кого забанить?', callback, keyboard)
-    write_log(callback.from_user.id, "Использование мекню бана игроков")
+    await write_log(callback.from_user.id, "Использование мекню бана игроков")
 
 @dp.callback_query(F.data.startswith("ban"))
 @protected
@@ -266,7 +267,7 @@ async def ban_member(callback: CallbackQuery) -> None:
     remove_member(user_id)
     await bot.send_message(chat_id=user_id, text="😢 К сожалению, вас добавили в ЧС клана")
     await callback.answer("👋 Игрок был забанен",show_alert=True)
-    write_log(callback.from_user.id, f"Бан игрока {nick} ({user_id})")
+    await write_log(callback.from_user.id, f"Бан игрока {nick} ({user_id})")
 
 @dp.callback_query(F.data == "show_members_to_unban")
 @protected
@@ -281,7 +282,7 @@ async def show_members_to_unban(callback: CallbackQuery) -> None:
         await change_message('❓ Кого разбанить?', callback, keyboard)
     else:
         await callback.answer('❌ Забаненых нет, ура!',show_alert=True)
-    write_log(callback.from_user.id, "Использование меню разбана")
+    await write_log(callback.from_user.id, "Использование меню разбана")
 
 @dp.callback_query(F.data.startswith("unban"))
 @protected
@@ -293,7 +294,7 @@ async def unban_member(callback: CallbackQuery) -> None:
     remove_member(user_id)
     await bot.send_message(chat_id=user_id, text="✅ Вас убрали из ЧС клана")
     await callback.answer("✅ Игрок был разбанен",show_alert=True)
-    write_log(callback.from_user.id, f"Разбан игрока {nick} ({user_id})")
+    await write_log(callback.from_user.id, f"Разбан игрока {nick} ({user_id})")
 
 @dp.callback_query(F.data == "show_bans")
 @protected
@@ -310,7 +311,7 @@ async def show_bans(callback: CallbackQuery) -> None:
         await change_message('⛔ Забаненные игроки: ', callback, keyboard)
     else:
         await callback.answer('❌ Забаненых нет, ура!',show_alert=True)
-    write_log(callback.from_user.id, "Использование меню банов")
+    await write_log(callback.from_user.id, "Использование меню банов")
 
 @dp.callback_query(F.data.startswith("fire"))
 @protected
@@ -322,7 +323,7 @@ async def fire_member(callback: CallbackQuery) -> None:
     remove_member(user_id)
     await bot.send_message(chat_id=user_id, text="😢 К сожалению, вас выгнали из клана")
     await callback.answer("👋 Игрок был выгнан",show_alert=True)
-    write_log(callback.from_user.id, f"Кик игрока {nick} ({user_id})")
+    await write_log(callback.from_user.id, f"Кик игрока {nick} ({user_id})")
 
 @dp.callback_query(F.data == "manage_admins")
 @protected
@@ -333,7 +334,7 @@ async def manage_admins(callback: CallbackQuery) -> None:
         [InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")]]
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await change_message('👑 Управление админами:', callback, keyboard)
-    write_log(callback.from_user.id, "Использование меню управления админами")
+    await write_log(callback.from_user.id, "Использование меню управления админами")
 
 @dp.callback_query(F.data == "add_admin")
 @protected
@@ -345,7 +346,7 @@ async def add_admin_menu(callback: CallbackQuery) -> None:
     buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")])
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     await change_message('👑 Кому выдать права админа?', callback, keyboard)
-    write_log(callback.from_user.id, "Использование панели добавления админов")
+    await write_log(callback.from_user.id, "Использование панели добавления админов")
 
 @dp.callback_query(F.data.startswith("admin"))
 @protected
@@ -358,31 +359,31 @@ async def op_member(callback: CallbackQuery) -> None:
     await bot.send_message(chat_id=user_id, text="🎩 Поздравляем! Вас повысили до админа!")
     await callback.answer("✅ Вы повысили игрока до админа",show_alert=True)
     await add_admin_menu(callback)
-    write_log(callback.from_user.id, f"Повышение игрока {nick} ({user_id})")
+    await write_log(callback.from_user.id, f"Повышение игрока {nick} ({user_id})")
 
 @dp.callback_query(F.data == "remove_admin")
 @protected
 async def deop(callback: CallbackQuery) -> None:
     remove_admin(callback.from_user.id)
     await callback.answer("👋 Вы сняли с себя права админа",show_alert=True)
-    write_log(callback.from_user.id, "Снятие с себя прав админа")
+    await write_log(callback.from_user.id, "Снятие с себя прав админа")
 
 @dp.callback_query(F.data == "leave")
 async def leave(callback: CallbackQuery) -> None:
     if is_member(callback.from_user.id):
         remove_member(callback.from_user.id)
         await callback.answer("👋 Вы вышли из клана",show_alert=True)
-        write_log(callback.from_user.id, "Выход из клана")
+        await write_log(callback.from_user.id, "Выход из клана")
     else:
         await callback.answer("👋 Вы уже вышли из клана или еще не в нем", show_alert=True)
-        write_log(callback.from_user.id, "Неудачная попытка выхода из клана")
+        await write_log(callback.from_user.id, "Неудачная попытка выхода из клана")
 
 @dp.callback_query(F.data == "go_back")
 async def go_back(callback : CallbackQuery) -> None:
     keyboard=get_main_menu()
     await bot.edit_message_text(chat_id=callback.message.chat.id,message_id=callback.message.message_id,text="Вот меню:")
     await bot.edit_message_reply_markup(chat_id=callback.message.chat.id,message_id=callback.message.message_id,reply_markup=keyboard)
-    write_log(callback.from_user.id, 'Нажатие кнопки "назад"')
+    await write_log(callback.from_user.id, 'Нажатие кнопки "назад"')
 
 async def main() -> None:
     await dp.start_polling(bot)
