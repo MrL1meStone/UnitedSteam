@@ -78,7 +78,6 @@ def ban(user_id) -> None:
 		cursor.execute(f"SELECT nick,age FROM Requests WHERE id=?", (user_id,))
 	else:
 		cursor.execute(f"SELECT nick,age FROM Members WHERE id=?", (user_id,))
-
 	cursor.execute('INSERT INTO Bans id VALUES ?', (user_id,))
 	remove_member(user_id)
 	connection.commit()
