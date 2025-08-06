@@ -13,6 +13,10 @@ def everyday_logs():
 	for member in return_from('Members'):
 		write_log(member['id'],f"Новый лог для {member['id']} ({member['nick']})",mode='w')
 
+def view_logs(user_id):
+	with open(f'logs/{user_id}.log','r',encoding='utf-8') as log:
+		return log.read()
+
 for member in return_from('Members'):
 	write_log(member['id'],f"Новый лог для {member['id']} ({member['nick']})",mode='w')
 

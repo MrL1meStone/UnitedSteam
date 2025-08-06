@@ -2,7 +2,7 @@ import asyncio
 import re
 import os
 
-from bot_logging import write_log
+from bot_logging import write_log, view_logs
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
@@ -29,9 +29,7 @@ def get_main_menu():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📝 Заполнить анкету", callback_data="register")],
         [InlineKeyboardButton(text="👥 Список участников", callback_data="members")],
-        [InlineKeyboardButton(text="📨 Заявки на вступление", callback_data="requests")],
-        [InlineKeyboardButton(text="⚙️ Управление участниками", callback_data="manage_members")],
-        [InlineKeyboardButton(text="👑 Управление админами", callback_data="manage_admins")],
+        [InlineKeyboardButton(text="👑 Aдминские команды", callback_data="commands_for_admins")],
         [InlineKeyboardButton(text="🚪 Выйти", callback_data="leave")]
     ])
 
@@ -186,6 +184,42 @@ async def decline_request(callback: CallbackQuery) -> None:
     await callback.answer("❌ Заявка была отклонена",show_alert=True)
     await show_requests()
     write_log(callback.from_user.id,f"Принятие заявки игрока {nick} ({user_id})")
+
+@dp.callback_query(F.data == "commands_for_admins")
+@protected
+async def commands_for_admins(callback : CallbackQuery) -> None:
+    keyboard=InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="📨 Заявки на вступление", callback_data="requests")],
+    [InlineKeyboardButton(text="⚙️ Управление участниками", callback_data="manage_members")],
+    [InlineKeyboardButton(text="👑 Управление админами", callback_data="manage_admins")],
+    [InlineKeyboardButton(text="📋 Логи", callback_data="menu_logs")],
+    [InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")]])
+    await change_message('Админские команды:', callback, keyboard)
+    write_log(callback.from_user.id, 'Использование панели админских команд')
+
+@dp.callback_query(F.data == "menu_logs")
+@protected
+async def menu_logs(callback : CallbackQuery) -> None:
+    await callback.answer()
+    buttons = []
+    for member in return_from('Members'):
+        buttons.append([InlineKeyboardButton(text=f"👤 {member['nick']}", callback_data=f'view{member["id"]}')])
+    buttons.append([InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")])
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    await change_message('Выбери учасника, чьи логи хочешь посмотреть:', callback, keyboard)
+    write_log(callback.from_user.id, 'Использование панели логов')
+
+@dp.callback_query(F.data.startswith("view"))
+@protected
+async def menu_logs(callback : CallbackQuery) -> None:
+    await callback.answer()
+    nick='?'
+    user_id=callback.data[4:]
+    for member in return_from('Members'):
+        if member['id']==user_id: nick = member['nick']
+    keyboard=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="◀️ Назад", callback_data="go_back")]])
+    write_log(callback.from_user.id, f'Просмотр логов {nick} ({user_id})')
+    await change_message(view_logs(user_id), callback, keyboard)
 
 @dp.callback_query(F.data == "manage_members")
 @protected
